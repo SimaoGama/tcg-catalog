@@ -53,6 +53,22 @@ function mapLanguage(input: string) {
   }
 }
 
+type RawCard = {
+  id?: string;
+  name?: string;
+  localId?: string | number;
+  image?: string | null;
+  rarity?: string | null;
+  illustrator?: string | null;
+  description?: string | null;
+  set?: {
+    id?: string;
+    name?: string;
+    logo?: string | null;
+    symbol?: string | null;
+  } | null;
+};
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -73,7 +89,23 @@ export async function GET(
     return NextResponse.json({ card: null }, { status: res.status });
   }
 
-  const card = await res.json();
+  const rawCard: RawCard = await res.json();
+
+  const card = {
+    id: rawCard.id ?? "",
+    name: rawCard.name ?? "",
+    localId: rawCard.localId != null ? String(rawCard.localId) : "",
+    image: rawCard.image ?? null,
+    rarity: rawCard.rarity ?? "",
+    illustrator: rawCard.illustrator ?? "",
+    description: rawCard.description ?? "",
+    set: {
+      id: rawCard.set?.id ?? "",
+      name: rawCard.set?.name ?? "",
+      logo: rawCard.set?.logo ?? null,
+      symbol: rawCard.set?.symbol ?? null,
+    },
+  };
 
   return NextResponse.json({ card });
 }

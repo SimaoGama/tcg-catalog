@@ -136,7 +136,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
         <div className="flex items-center gap-3">
           {isAdmin && (
-            <div className="relative group">
+            <div className="group relative">
               <button
                 type="button"
                 className="flex h-11 w-11 items-center justify-center rounded-full bg-stone-900 text-xl font-semibold text-white transition hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
@@ -286,6 +286,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
               product.front_image_url ||
               "/placeholder-card.png";
             const setSymbolSrc = getAssetUrl(product.set_symbol_url);
+            const setLogoSrc = getAssetUrl(product.set_logo_url);
 
             return (
               <article
@@ -311,12 +312,23 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
                 <div className="relative p-5">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                        {product.title}
-                      </h2>
-                      <p className="text-sm text-stone-500 dark:text-stone-400">
-                        {product.game || "Trading card"}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        {setSymbolSrc ? (
+                          <img
+                            src={setSymbolSrc}
+                            alt={`${product.set_name || "Set"} symbol`}
+                            className="h-5 w-5 shrink-0 object-contain"
+                          />
+                        ) : null}
+
+                        <h2 className="truncate text-lg font-semibold text-stone-900 dark:text-stone-100">
+                          {product.title}
+                        </h2>
+                      </div>
+
+                      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                        {"Pokémon"}
                         {product.set_name ? ` • ${product.set_name}` : ""}
                       </p>
                     </div>
@@ -368,7 +380,13 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
                     </Link>
                   </div>
 
-                  {setSymbolSrc ? (
+                  {setLogoSrc ? (
+                    <img
+                      src={setLogoSrc}
+                      alt={`${product.set_name || "Set"} logo`}
+                      className="pointer-events-none absolute bottom-4 right-4 h-10 max-w-[96px] object-contain opacity-70"
+                    />
+                  ) : setSymbolSrc ? (
                     <img
                       src={setSymbolSrc}
                       alt={`${product.set_name || "Set"} symbol`}

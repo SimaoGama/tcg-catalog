@@ -36,38 +36,33 @@ function mapLanguage(input: string) {
     case "cn":
     case "simplified chinese":
       return "zh-cn";
+    case "th":
+      return "th";
     default:
       return "en";
   }
 }
 
-function scoreCard(
-  card: any,
-  query: string,
-  namePart: string,
-  localIdPart: string,
-  setHint: string
-) {
-  const cardName = normalize(card.name ?? "");
-  const localId = normalize(card.localId ?? "");
-  const id = normalize(card.id ?? "");
-  const setCode = id.split("-")[0] ?? "";
+function extractQueryParts(query: string) {
+  const normalized = query.trim();
+  const parts = normalized.split(/\s+/).filter(Boolean);
 
-  let score = 0;
+  const localIdPart = parts.find((part) => /^\d+[A-Za-z]?$/.test(part)) ?? "";
+  const setCodeHint = parts.find((part) => /^[a-z]{2,}\d+[a-z]?$/i.test(part)) ?? "";
 
-  if (cardName === normalize(namePart)) score += 8;
-  if (cardName.includes(normalize(namePart))) score += 4;
+  const remainingParts = parts.filter(
+    (part) => part !== localIdPart && part !== setCodeHint
+  );
 
-  if (localIdPart && localId === normalize(localIdPart)) score += 10;
-  if (localIdPart && `${cardName} ${localId}`.includes(normalize(query))) score += 4;
+  const namePart = remainingParts.join(" ").trim() || normalized;
+  const setHint = remainingParts.length > 1 ? remainingParts.slice(1).join(" ") : "";
 
-  if (setHint) {
-    if (setCode === normalize(setHint)) score += 8;
-    if (setCode.includes(normalize(setHint))) score += 4;
-    if (id.includes(normalize(setHint))) score += 2;
-  }
-
-  return score;
+  return {
+    namePart,
+    localIdPart,
+    setHint,
+    setCodeHint,
+  };
 }
 
 async function getSetMap(setCodes: string[], language: string) {
@@ -105,6 +100,80 @@ async function getSetMap(setCodes: string[], language: string) {
   return new Map(responses);
 }
 
+function scoreCard(
+  card: any,
+  query: string,
+  namePart: string,
+  localIdPart: string,
+  setHint: string,
+  setCodeHint: string,
+  setName: string
+) {
+  const fullQuery = normalize(query);
+  const cardName = normalize(card.name ?? "");
+  const localId = normalize(card.localId ?? "");
+  const id = normalize(card.id ?? "");
+  const setCode = id.split("-")[0] ?? "";
+  const normalizedSetName = normalize(setName);
+
+  let score = 0;
+
+  if (cardName === normalize(namePart)) score += 20;
+  if (namePart && cardName.includes(normalize(namePart))) score += 10;
+
+  if (localIdPart && localId === normalize(localIdPart)) score += 100;
+  if (localIdPart && localId !== normalize(localIdPart)) score -= 50;
+  if (localIdPart && `${cardName} ${localId}`.includes(fullQuery)) score += 12;
+
+  if (setCodeHint) {
+    if (setCode === normalize(setCodeHint)) score += 20;
+    if (setCode.includes(normalize(setCodeHint))) score += 10;
+  }
+
+  if (setHint) {
+    if (normalizedSetName === normalize(setHint)) score += 18;
+    if (normalizedSetName.includes(normalize(setHint))) score += 10;
+    if (setCode.includes(normalize(setHint))) score += 8;
+    if (id.includes(normalize(setHint))) score += 4;
+  }
+
+  const haystack = `${cardName} ${localId} ${setCode} ${normalizedSetName}`.trim();
+
+  if (haystack.includes(fullQuery)) score += 12;
+
+  return score;
+}
+
+async function localizeCards(cards: any[], language: string) {
+  if (language === "en") return cards;
+
+  const localized = await Promise.all(
+    cards.map(async (card) => {
+      try {
+        const res = await fetch(
+          `https://api.tcgdex.net/v2/${language}/cards/${encodeURIComponent(card.id)}`,
+          { cache: "no-store" }
+        );
+
+        if (!res.ok) return card;
+
+        const localizedCard = await res.json();
+
+        return {
+          ...card,
+          name: localizedCard.name ?? card.name,
+          localId: localizedCard.localId ?? card.localId,
+          image: localizedCard.image ?? card.image,
+        };
+      } catch {
+        return card;
+      }
+    })
+  );
+
+  return localized;
+}
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() || "";
   const rawLanguage = req.nextUrl.searchParams.get("language")?.trim() || "en";
@@ -114,30 +183,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ cards: [] });
   }
 
-  const numberMatch = q.match(/^(.+?)\s+(\d+[A-Za-z]?)$/);
-  const parts = q.split(/\s+/).filter(Boolean);
-
-  let namePart = q;
-  let localIdPart = "";
-  let setHint = "";
-
-  if (numberMatch) {
-    namePart = numberMatch[1].trim();
-    localIdPart = numberMatch[2].trim();
-  } else if (parts.length >= 2) {
-    namePart = parts[0];
-    setHint = parts.slice(1).join(" ");
-  }
+  const { namePart, localIdPart, setHint, setCodeHint } = extractQueryParts(q);
 
   const params = new URLSearchParams();
-  params.set("name", namePart);
+  params.set("name", namePart || q);
 
-  if (localIdPart) {
-    params.set("localId", localIdPart);
-  }
-
-  const url = `https://api.tcgdex.net/v2/${language}/cards?${params.toString()}`;
-  const res = await fetch(url, { cache: "no-store" });
+  const englishUrl = `https://api.tcgdex.net/v2/en/cards?${params.toString()}`;
+  const res = await fetch(englishUrl, { cache: "no-store" });
 
   if (!res.ok) {
     return NextResponse.json({ cards: [] });
@@ -146,43 +198,59 @@ export async function GET(req: NextRequest) {
   const data = await res.json();
   const rawCards = Array.isArray(data) ? data : data.data ?? [];
 
-  const scoredCards = rawCards
+  const withSetCode = rawCards.map((card: any) => {
+    const setCode = String(card.id ?? "").split("-")[0] ?? "";
+    return {
+      ...card,
+      setCode,
+    };
+  });
+
+  const localizedCards = await localizeCards(withSetCode, language);
+
+  const setMap = await getSetMap(
+    localizedCards.map((card: any) => card.setCode),
+    language
+  );
+
+  const scoredCards = localizedCards
     .map((card: any) => {
-      const setCode = String(card.id ?? "").split("-")[0] ?? "";
+      const setInfo = setMap.get(card.setCode);
 
       return {
         id: card.id,
         name: card.name,
         localId: card.localId ?? null,
         image: card.image ?? null,
-        setCode,
-        score: scoreCard(card, q, namePart, localIdPart, setHint),
+        setCode: card.setCode,
+        setName: setInfo?.name ?? card.setCode,
+        setLogo: setInfo?.logo ?? null,
+        setSymbol: setInfo?.symbol ?? null,
+        score: scoreCard(
+          card,
+          q,
+          namePart,
+          localIdPart,
+          setHint,
+          setCodeHint,
+          setInfo?.name ?? card.setCode
+        ),
       };
     })
     .filter((card: any) => {
-      if (!setHint) return true;
-
-      const haystack = `${card.name} ${card.localId ?? ""} ${card.setCode}`.toLowerCase();
-      return haystack.includes(setHint.toLowerCase()) || card.score > 0;
+      if (localIdPart) {
+        return normalize(card.localId ?? "") === normalize(localIdPart);
+      }
+      return card.score > 0;
+    })
+    .filter((card: any) => {
+      if (setCodeHint) {
+        return normalize(card.setCode ?? "").includes(normalize(setCodeHint));
+      }
+      return true;
     })
     .sort((a: any, b: any) => b.score - a.score)
     .slice(0, 8);
 
-  const setMap = await getSetMap(
-    scoredCards.map((card: any) => card.setCode),
-    language
-  );
-
-  const cards = scoredCards.map(({ score, ...card }: any) => {
-    const setInfo = setMap.get(card.setCode);
-
-    return {
-      ...card,
-      setName: setInfo?.name ?? card.setCode,
-      setLogo: setInfo?.logo ?? null,
-      setSymbol: setInfo?.symbol ?? null,
-    };
-  });
-
-  return NextResponse.json({ cards });
+  return NextResponse.json({ cards: scoredCards });
 }

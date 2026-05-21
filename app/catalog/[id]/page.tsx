@@ -85,6 +85,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     product.back_image_url ||
     product.front_image_url ||
     "/placeholder-card.png";
+    
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
@@ -123,8 +124,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
         <aside className="rounded-3xl border border-stone-200 bg-white p-8 shadow-sm dark:border-stone-800 dark:bg-stone-900">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-              {product.game || "Trading card"}
+              {product.product_type ?? "Pokémon"}
             </p>
+            
 
             <h1 className="mt-2 text-3xl font-semibold text-stone-900 dark:text-stone-100">
               {product.title}

@@ -15,7 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100">
+      <body
+        suppressHydrationWarning
+        className="bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100"
+      >
         <ThemeProvider>
           <SiteHeader />
           {children}
