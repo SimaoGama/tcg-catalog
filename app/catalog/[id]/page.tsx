@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import CardImageModal from "@/components/card-image-modal";
+import AddToCartButton from "@/components/add-to-cart-button";
 
 type PageProps = {
   params: Promise<{
@@ -65,6 +66,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
     revalidatePath("/catalog");
     redirect("/catalog");
   }
+
+    
 
   const { data: product, error } = await supabase
     .from("products")
@@ -190,31 +193,25 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-4">
-            {user ? (
-              <button
-                type="button"
-                className="rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
-              >
-                Buy / add to cart
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
-                >
-                  Login to buy
-                </button>
-
-                <Link
-                  href="/login"
-                  className="rounded-full border border-stone-300 px-5 py-3 text-sm font-medium text-stone-700 hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:text-stone-200 dark:hover:border-stone-500 dark:hover:text-white"
-                >
-                  Login
-                </Link>
-              </>
-            )}
-          </div>
+  {!user ? (
+    <Link
+      href="/login"
+      className="rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
+    >
+      Login to buy
+    </Link>
+    ) : isAdmin ? null : product.stock > 0 ? (
+    <AddToCartButton productId={product.id} />
+  ) : (
+    <button
+      type="button"
+      disabled
+      className="cursor-not-allowed rounded-full bg-stone-300 px-5 py-3 text-sm font-medium text-stone-600 dark:bg-stone-800 dark:text-stone-400"
+    >
+      Out of stock
+    </button>
+  )}
+</div>
 
           {isAdmin && (
             <div className="mt-8 space-y-3 border-t border-stone-200 pt-6 dark:border-stone-800">

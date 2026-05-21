@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function NewCardPage() {
+export default async function NewSealedProductPage() {
   const supabase = await createClient();
 
   const {
@@ -26,7 +26,7 @@ export default async function NewCardPage() {
     redirect("/catalog");
   }
 
-  async function createCard(formData: FormData) {
+  async function createSealedProduct(formData: FormData) {
     "use server";
 
     const supabase = await createClient();
@@ -54,11 +54,8 @@ export default async function NewCardPage() {
     const title = String(formData.get("title") || "").trim();
     const description = String(formData.get("description") || "").trim();
     const set_name = String(formData.get("set_name") || "").trim();
-    const card_number = String(formData.get("card_number") || "").trim();
-    const language = String(formData.get("language") || "EN").trim();
-    const rarity = String(formData.get("rarity") || "").trim();
+    const language = String(formData.get("language") || "").trim();
     const condition = String(formData.get("condition") || "").trim();
-    const illustrator = String(formData.get("illustrator") || "").trim();
     const price_cents = Number(formData.get("price_cents") || 0);
     const stock = Number(formData.get("stock") || 0);
 
@@ -100,14 +97,11 @@ export default async function NewCardPage() {
 
     const { error } = await supabase.from("products").insert({
       title,
-      product_type: "single_card",
+      product_type: "sealed_product",
       description: description || null,
       set_name: set_name || null,
-      card_number: card_number || null,
-      language,
-      rarity: rarity || null,
+      language: language || null,
       condition: condition || null,
-      illustrator: illustrator || null,
       front_image_url,
       back_image_url,
       price_cents,
@@ -115,6 +109,9 @@ export default async function NewCardPage() {
       created_by: userId,
       is_active: true,
       is_already_graded: false,
+      card_number: null,
+      rarity: null,
+      illustrator: null,
     });
 
     if (error) {
@@ -128,17 +125,17 @@ export default async function NewCardPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-8">
-        <p className="text-sm text-stone-500 dark:text-stone-400">Admin / Cards</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">Admin / Products</p>
         <h1 className="mt-2 text-3xl font-semibold text-stone-900 dark:text-stone-100">
-          Add new card
+          Add sealed product
         </h1>
         <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
-          Create a new single card for your catalog.
+          Create a new sealed product for your catalog.
         </p>
       </div>
 
       <form
-        action={createCard}
+        action={createSealedProduct}
         className="space-y-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900"
       >
         <div className="grid gap-5 sm:grid-cols-2">
@@ -149,7 +146,7 @@ export default async function NewCardPage() {
             <input
               name="title"
               required
-              placeholder="Charizard ex #199"
+              placeholder="Pokémon 151 Elite Trainer Box"
               className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
             />
           </div>
@@ -160,18 +157,7 @@ export default async function NewCardPage() {
             </label>
             <input
               name="set_name"
-              placeholder="Obsidian Flames"
-              className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-stone-700 dark:text-stone-300">
-              Card number
-            </label>
-            <input
-              name="card_number"
-              placeholder="199/197"
+              placeholder="Scarlet & Violet 151"
               className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
             />
           </div>
@@ -196,33 +182,12 @@ export default async function NewCardPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-stone-700 dark:text-stone-300">
-              Rarity
-            </label>
-            <input
-              name="rarity"
-              placeholder="Illustration Rare"
-              className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-stone-700 dark:text-stone-300">
               Condition
             </label>
             <input
               name="condition"
-              placeholder="Near Mint"
-              className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-stone-700 dark:text-stone-300">
-              Illustrator
-            </label>
-            <input
-              name="illustrator"
-              placeholder="Akira Egawa"
+              placeholder="Sealed"
+              defaultValue="Sealed"
               className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
             />
           </div>
@@ -284,7 +249,7 @@ export default async function NewCardPage() {
             <textarea
               name="description"
               rows={4}
-              placeholder="Optional notes about the card..."
+              placeholder="Optional notes about the sealed product..."
               className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
             />
           </div>
@@ -302,7 +267,7 @@ export default async function NewCardPage() {
             type="submit"
             className="rounded-2xl bg-stone-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
           >
-            Save card
+            Save sealed product
           </button>
         </div>
       </form>

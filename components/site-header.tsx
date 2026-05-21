@@ -11,6 +11,7 @@ export default async function SiteHeader() {
   } = await supabase.auth.getUser();
 
   let isAdmin = false;
+  let cartItemCount = 0;
 
   if (user) {
     const { data: profile } = await supabase
@@ -20,6 +21,18 @@ export default async function SiteHeader() {
       .single();
 
     isAdmin = profile?.role === "admin";
+
+    if (!isAdmin) {
+      const { data: cartItems } = await supabase
+        .from("cart_items")
+        .select("quantity")
+        .eq("user_id", user.id);
+
+      cartItemCount = (cartItems ?? []).reduce(
+        (sum, item) => sum + (item.quantity ?? 0),
+        0
+      );
+    }
   }
 
   return (
@@ -34,7 +47,7 @@ export default async function SiteHeader() {
 
         <div className="flex items-center gap-3 md:gap-6">
           <nav className="flex items-center gap-4 text-sm text-stone-600 dark:text-stone-300">
-            <Link href="/cards" className="hover:text-stone-950 dark:hover:text-white">
+            <Link href="/catalog" className="hover:text-stone-950 dark:hover:text-white">
               Browse
             </Link>
 
@@ -61,7 +74,7 @@ export default async function SiteHeader() {
             </a>
           </nav>
 
-          <AuthButton user={user} isAdmin={isAdmin} />
+          <AuthButton user={user} isAdmin={isAdmin} cartItemCount={cartItemCount} />
           <ThemeToggle />
         </div>
       </div>
