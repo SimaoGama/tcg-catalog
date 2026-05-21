@@ -10,6 +10,18 @@ export default async function SiteHeader() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  let isAdmin = false;
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    isAdmin = profile?.role === "admin";
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/90 backdrop-blur dark:border-stone-800 dark:bg-stone-900/90">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
@@ -26,6 +38,15 @@ export default async function SiteHeader() {
               Browse
             </Link>
 
+            {isAdmin && (
+              <Link
+                href="/catalog"
+                className="hover:text-stone-950 dark:hover:text-white"
+              >
+                Catalog
+              </Link>
+            )}
+
             <a href="/#about" className="hover:text-stone-950 dark:hover:text-white">
               About
             </a>
@@ -40,7 +61,7 @@ export default async function SiteHeader() {
             </a>
           </nav>
 
-          <AuthButton user={user} />
+          <AuthButton user={user} isAdmin={isAdmin} />
           <ThemeToggle />
         </div>
       </div>

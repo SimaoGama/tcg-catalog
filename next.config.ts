@@ -6,6 +6,16 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  images: {
+    qualities: [75, 100],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "hdvsudciyzphbakdpbio.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

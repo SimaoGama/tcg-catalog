@@ -14,6 +14,18 @@ export default async function NewCardPage() {
     redirect("/login");
   }
 
+  const userId = user.id;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single();
+
+  if (profile?.role !== "admin") {
+    redirect("/catalog");
+  }
+
   async function createCard(formData: FormData) {
     "use server";
 
@@ -25,6 +37,18 @@ export default async function NewCardPage() {
 
     if (!user) {
       redirect("/login");
+    }
+
+    const userId = user.id;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    if (profile?.role !== "admin") {
+      throw new Error("Unauthorized");
     }
 
     const title = String(formData.get("title") || "").trim();
@@ -49,7 +73,7 @@ export default async function NewCardPage() {
       if (!file || file.size === 0) return null;
 
       const extension = file.name.split(".").pop() || "jpg";
-      const filePath = `${user.id}/${kind}-${Date.now()}-${crypto.randomUUID()}.${extension}`;
+      const filePath = `${userId}/${kind}-${Date.now()}-${crypto.randomUUID()}.${extension}`;
 
       const bytes = await file.arrayBuffer();
 
@@ -87,7 +111,7 @@ export default async function NewCardPage() {
       back_image_url,
       price_cents,
       stock,
-      created_by: user.id,
+      created_by: userId,
       is_active: true,
       is_already_graded: false,
     });
