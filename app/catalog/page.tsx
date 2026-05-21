@@ -2,6 +2,19 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CatalogFilters from "@/components/catalog-filters";
 
+function getAssetUrl(asset?: string | null) {
+  if (!asset) return null;
+  if (
+    asset.endsWith(".jpg") ||
+    asset.endsWith(".png") ||
+    asset.endsWith(".webp") ||
+    asset.endsWith(".svg")
+  ) {
+    return asset;
+  }
+  return `${asset}.png`;
+}
+
 type CatalogPageProps = {
   searchParams?: Promise<{
     view?: string;
@@ -17,12 +30,12 @@ type CatalogPageProps = {
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const params = (await searchParams) ?? {};
   const view = params.view === "list" ? "list" : "grid";
-const query = params.q?.trim() ?? "";
-const language = params.language?.trim() ?? "";
-const rarity = params.rarity?.trim() ?? "";
-const condition = params.condition?.trim() ?? "";
-const productType = params.productType?.trim() ?? "";
-const inStock = params.inStock === "true";
+  const query = params.q?.trim() ?? "";
+  const language = params.language?.trim() ?? "";
+  const rarity = params.rarity?.trim() ?? "";
+  const condition = params.condition?.trim() ?? "";
+  const productType = params.productType?.trim() ?? "";
+  const inStock = params.inStock === "true";
 
   const supabase = await createClient();
 
@@ -67,8 +80,8 @@ const inStock = params.inStock === "true";
   }
 
   if (productType) {
-  productsQuery = productsQuery.eq("product_type", productType);
-}
+    productsQuery = productsQuery.eq("product_type", productType);
+  }
 
   if (inStock) {
     productsQuery = productsQuery.gt("stock", 0);
@@ -133,28 +146,28 @@ const inStock = params.inStock === "true";
               </button>
 
               <div className="invisible absolute right-0 top-14 z-20 w-56 rounded-2xl border border-stone-200 bg-white p-2 opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 dark:border-stone-800 dark:bg-stone-900">
-  <Link
-    href="/admin/cards/new"
-    className="block rounded-xl px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-950 dark:text-stone-200 dark:hover:bg-stone-800 dark:hover:text-white"
-  >
-    Add new card
-  </Link>
+                <Link
+                  href="/admin/cards/new"
+                  className="block rounded-xl px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-950 dark:text-stone-200 dark:hover:bg-stone-800 dark:hover:text-white"
+                >
+                  Add new card
+                </Link>
 
-  <Link
-    href="/admin/products/new"
-    className="block rounded-xl px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-950 dark:text-stone-200 dark:hover:bg-stone-800 dark:hover:text-white"
-  >
-    Add sealed product
-  </Link>
+                <Link
+                  href="/admin/products/new"
+                  className="block rounded-xl px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-950 dark:text-stone-200 dark:hover:bg-stone-800 dark:hover:text-white"
+                >
+                  Add sealed product
+                </Link>
 
-  <button
-    type="button"
-    disabled
-    className="block w-full cursor-not-allowed rounded-xl px-3 py-2 text-left text-sm font-medium text-stone-400 dark:text-stone-500"
-  >
-    Bulk add (soon)
-  </button>
-</div>
+                <button
+                  type="button"
+                  disabled
+                  className="block w-full cursor-not-allowed rounded-xl px-3 py-2 text-left text-sm font-medium text-stone-400 dark:text-stone-500"
+                >
+                  Bulk add (soon)
+                </button>
+              </div>
             </div>
           )}
 
@@ -195,17 +208,17 @@ const inStock = params.inStock === "true";
       </div>
 
       <CatalogFilters
-  view={view}
-  query={query}
-  language={language}
-  rarity={rarity}
-  condition={condition}
-  productType={productType}
-  inStock={inStock}
-  languages={languages}
-  rarities={rarities}
-  conditions={conditions}
-/>
+        view={view}
+        query={query}
+        language={language}
+        rarity={rarity}
+        condition={condition}
+        productType={productType}
+        inStock={inStock}
+        languages={languages}
+        rarities={rarities}
+        conditions={conditions}
+      />
 
       {products.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-stone-300 bg-stone-50 p-10 text-center dark:border-stone-700 dark:bg-stone-900">
@@ -266,98 +279,107 @@ const inStock = params.inStock === "true";
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-  {products.map((product) => {
-    const frontSrc = product.front_image_url || "/placeholder-card.png";
-    const backSrc =
-      product.back_image_url ||
-      product.front_image_url ||
-      "/placeholder-card.png";
+          {products.map((product) => {
+            const frontSrc = product.front_image_url || "/placeholder-card.png";
+            const backSrc =
+              product.back_image_url ||
+              product.front_image_url ||
+              "/placeholder-card.png";
+            const setSymbolSrc = getAssetUrl(product.set_symbol_url);
 
-    return (
-      <article
-        key={product.id}
-        className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
-      >
-        <div className="group relative aspect-[3/4] w-full overflow-hidden bg-white dark:bg-stone-950">
-          <img
-            src={frontSrc}
-            alt={`${product.title} front`}
-            className="h-full w-full object-contain transition duration-200 group-hover:scale-[1.02] group-hover:opacity-0"
-          />
-          <img
-            src={backSrc}
-            alt={`${product.title} back`}
-            className="absolute inset-0 h-full w-full object-contain opacity-0 transition duration-200 group-hover:scale-[1.02] group-hover:opacity-100"
-          />
+            return (
+              <article
+                key={product.id}
+                className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
+              >
+                <div className="group relative aspect-[3/4] w-full overflow-hidden bg-white dark:bg-stone-950">
+                  <img
+                    src={frontSrc}
+                    alt={`${product.title} front`}
+                    className="h-full w-full object-contain transition duration-200 group-hover:scale-[1.02] group-hover:opacity-0"
+                  />
+                  <img
+                    src={backSrc}
+                    alt={`${product.title} back`}
+                    className="absolute inset-0 h-full w-full object-contain opacity-0 transition duration-200 group-hover:scale-[1.02] group-hover:opacity-100"
+                  />
 
-          <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-stone-700 opacity-0 shadow-sm transition-opacity duration-200 group-hover:opacity-100 dark:bg-stone-900/90 dark:text-stone-200">
-            Back preview
-          </div>
+                  <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-stone-700 opacity-0 shadow-sm transition-opacity duration-200 group-hover:opacity-100 dark:bg-stone-900/90 dark:text-stone-200">
+                    Back preview
+                  </div>
+                </div>
+
+                <div className="relative p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                        {product.title}
+                      </h2>
+                      <p className="text-sm text-stone-500 dark:text-stone-400">
+                        {product.game || "Trading card"}
+                        {product.set_name ? ` • ${product.set_name}` : ""}
+                      </p>
+                    </div>
+
+                    <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+                      €{(product.price_cents / 100).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-1 text-sm text-stone-500 dark:text-stone-400">
+                    <p>
+                      Type:{" "}
+                      {product.product_type === "sealed_product"
+                        ? "Sealed product"
+                        : "Card single"}
+                    </p>
+                    {product.card_number && <p>Number: {product.card_number}</p>}
+                    {product.rarity && <p>Rarity: {product.rarity}</p>}
+                    {product.condition && <p>Condition: {product.condition}</p>}
+                    {product.illustrator && <p>Illustrator: {product.illustrator}</p>}
+                    {product.predicted_grade && product.predicted_grading_company && (
+                      <p>
+                        Predicted: {product.predicted_grading_company}{" "}
+                        {product.predicted_grade}
+                      </p>
+                    )}
+                    {product.is_already_graded &&
+                      product.actual_grade &&
+                      product.actual_grading_company && (
+                        <p>
+                          Graded: {product.actual_grading_company} {product.actual_grade}
+                        </p>
+                      )}
+                    <p>Stock: {product.stock}</p>
+                  </div>
+
+                  {product.description && (
+                    <p className="mt-4 text-sm text-stone-600 dark:text-stone-300">
+                      {product.description}
+                    </p>
+                  )}
+
+                  <div className="mt-5 flex gap-3">
+                    <Link
+                      href={`/catalog/${product.id}`}
+                      className="rounded-2xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:text-stone-200 dark:hover:border-stone-500 dark:hover:text-white"
+                    >
+                      View details
+                    </Link>
+                  </div>
+
+                  {setSymbolSrc ? (
+                    <img
+                      src={setSymbolSrc}
+                      alt={`${product.set_name || "Set"} symbol`}
+                      className="pointer-events-none absolute bottom-4 right-4 h-8 w-8 object-contain opacity-70"
+                    />
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
         </div>
-
-        <div className="p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                {product.title}
-              </h2>
-              <p className="text-sm text-stone-500 dark:text-stone-400">
-                {product.game || "Trading card"}
-                {product.set_name ? ` • ${product.set_name}` : ""}
-              </p>
-            </div>
-
-            <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600 dark:bg-stone-800 dark:text-stone-300">
-              €{(product.price_cents / 100).toFixed(2)}
-            </span>
-          </div>
-
-          <div className="mt-4 space-y-1 text-sm text-stone-500 dark:text-stone-400">
-            <p>
-              Type:{" "}
-              {product.product_type === "sealed_product"
-                ? "Sealed product"
-                : "Card single"}
-            </p>
-            {product.card_number && <p>Number: {product.card_number}</p>}
-            {product.rarity && <p>Rarity: {product.rarity}</p>}
-            {product.condition && <p>Condition: {product.condition}</p>}
-            {product.illustrator && <p>Illustrator: {product.illustrator}</p>}
-            {product.predicted_grade && product.predicted_grading_company && (
-              <p>
-                Predicted: {product.predicted_grading_company}{" "}
-                {product.predicted_grade}
-              </p>
-            )}
-            {product.is_already_graded &&
-              product.actual_grade &&
-              product.actual_grading_company && (
-                <p>
-                  Graded: {product.actual_grading_company} {product.actual_grade}
-                </p>
-              )}
-            <p>Stock: {product.stock}</p>
-          </div>
-
-          {product.description && (
-            <p className="mt-4 text-sm text-stone-600 dark:text-stone-300">
-              {product.description}
-            </p>
-          )}
-
-          <div className="mt-5 flex gap-3">
-            <Link
-              href={`/catalog/${product.id}`}
-              className="rounded-2xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:text-stone-200 dark:hover:border-stone-500 dark:hover:text-white"
-            >
-              View details
-            </Link>
-          </div>
-        </div>
-      </article>
-    );
-  })}
-</div>
       )}
     </main>
   );

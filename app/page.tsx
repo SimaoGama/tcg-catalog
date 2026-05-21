@@ -108,10 +108,10 @@ export default async function HomePage() {
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-              Featured cards
+              Newly added
             </p>
             <h3 className="mt-2 text-2xl font-bold text-stone-950 dark:text-white">
-              Spotlight cards
+              Spotlight products
             </h3>
           </div>
           <p className="text-sm text-stone-500 dark:text-stone-400">
